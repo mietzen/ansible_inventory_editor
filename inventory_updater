@@ -1,0 +1,43 @@
+#!/bin/bash
+
+if [ ! command python3 >/dev/null 2>&1 ]
+then
+    echo "Python 3 not found!"
+    exit 1
+fi
+
+if [ ! -d "./inventory_updater_venv/" ]
+then
+    echo "First run:"
+    echo "    Creating Virtual Enviroment..."
+    if [ ! command python -m venv -h >/dev/null 2>&1 ]
+    then
+        echo "Python 3 Virtualenv not found!"
+        exit 1
+    fi
+    python3 -m venv inventory_updater_venv
+    source ./inventory_updater_venv/bin/activate
+    echo "    Installing Requirements..."
+    pip install -r requirements.txt >/dev/null 2>&1
+    echo "    ...done!"
+fi 
+
+if [[ $(basename $VIRTUAL_ENV >/dev/null 2>&1) != 'inventory_updater_venv' ]]
+then
+    source ./inventory_updater_venv/bin/activate
+fi
+
+if [ ! -w "/etc/ansible" ]
+then 
+    echo "/etc/ansible is not writeable please check permissions"
+    exit 1
+fi
+if [ ! -w "/etc/ansible/hosts" ]
+then 
+    echo "/etc/ansible/hosts is not writeable please check permissions"
+    exit 1
+fi
+
+python ./inventory_updater.py "$@"
+
+exit 0
