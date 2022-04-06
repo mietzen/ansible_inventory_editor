@@ -12,7 +12,7 @@ ln -s "$(pwd)/inventory_updater" "$HOME/.local/bin/inventory_updater"
 ```
 
 ## Usage example:
-
+```
 ./inventory_updater print_hosts_file
 all:
   children:
