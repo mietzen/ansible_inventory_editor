@@ -9,10 +9,10 @@ git clone https://github.com/n-stone/inventory_updater
 You can also add symlink to `~/.local/bin` make sure it is on your `PATH`
 ```
 ln -s "$(pwd)/inventory_updater" "$HOME/.local/bin/inventory_updater"
-
+```
 
 ## Usage example:
-```
+
 ./inventory_updater print_hosts_file
 all:
   children:
