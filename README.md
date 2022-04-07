@@ -78,7 +78,7 @@ $ inventory_updater
 You can also add symlink to `~/.local/bin` make sure it is on your `PATH`
 
 ```console
-ln -s "$(pwd)/inventory_updater" "$HOME/.local/bin/inventory_updater"
+$ ln -s "$(pwd)/inventory_updater" "$HOME/.local/bin/inventory_updater"
 ```
 
 ## Example
