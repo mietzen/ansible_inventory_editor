@@ -27,17 +27,6 @@ then
     source ./inventory_updater_venv/bin/activate
 fi
 
-if [ ! -w "/etc/ansible" ]
-then 
-    echo "/etc/ansible is not writeable please check permissions"
-    exit 1
-fi
-if [ ! -w "/etc/ansible/hosts" ]
-then 
-    echo "/etc/ansible/hosts is not writeable please check permissions"
-    exit 1
-fi
-
 python ./inventory_updater.py "$@"
 
 exit 0

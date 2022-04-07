@@ -1,3 +1,4 @@
+from logging import warning
 import yaml, argparse, os, datetime, sys
 
 class InventoryAdhocUpdater:
@@ -5,8 +6,24 @@ class InventoryAdhocUpdater:
         self._hosts = None
         self._group = group
         self._ansible_hosts_file = ansible_hosts_file
-        with open( self._ansible_hosts_file, "r") as stream:
-            self._hosts=yaml.safe_load(stream)
+        if os.access(os.path.dirname(self._ansible_hosts_file), os.W_OK) and os.access(os.path.dirname(self._ansible_hosts_file), os.R_OK):
+            if os.path.exists(self._ansible_hosts_file):
+                if os.stat("file").st_size > 0:
+                    if os.access(self._ansible_hosts_file, os.W_OK) and os.access(self._ansible_hosts_file, os.R_OK):
+                        with open( self._ansible_hosts_file, "r") as stream:
+                            self._hosts=yaml.safe_load(stream)
+                    else:
+                        error('File: ' + self._ansible_hosts_file + ' is not read and/or writeable! Check permissions!')
+                else:
+                    warning('File: ' + self._ansible_hosts_file + 'Is empty!')
+                    self._hosts = { 'all': { 'children': { 'ungrouped': {} } } }
+                    self._write_ansible_hosts_file(True, 0)
+            else:
+                warning('File: ' + self._ansible_hosts_file + 'Does not exists! Creating new ansible hosts file')
+                self._hosts = { 'all': { 'children': { 'ungrouped': {} } } }
+                self._write_ansible_hosts_file(True, 0)
+        else:
+            error('Directory: ' + os.path.dirname(self._ansible_hosts_file) + ' is not read and/or writeable! Check permissions!')
 
     def _write_ansible_hosts_file(self, no_backup, backups_to_keep):
         if not no_backup:
