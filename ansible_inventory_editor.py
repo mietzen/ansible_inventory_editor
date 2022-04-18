@@ -5,7 +5,7 @@ import os
 import datetime
 import sys
 
-class InventoryAdhocUpdater:
+class AnsibleInventoryEditor:
     def __init__(self, group, ansible_hosts_file):
         self._hosts = None
         self._group = group
@@ -56,37 +56,58 @@ class InventoryAdhocUpdater:
                 os.remove(os.path.join(os.path.dirname(
                     self._ansible_hosts_file), files[0]))
 
-    def set_host(self, container_name, container_ip, ansible_python_interpreter, no_backup, backups_to_keep):
-        if container_name in list(self._hosts['all']['children'][self._group]['hosts'].keys()):
-            error('The Hostname: ' + container_name + ' allready exists')
+    def check_if_hostname_is_taken(self, hostname):
+        return hostname in list(self._hosts['all']['children'][self._group]['hosts'].keys())
 
-        for host_name, host_data in self._hosts['all']['children']['lxc']['hosts'].items():
-            if container_ip == host_data['ansible_host']:
-                error('IP:' + host_data['ansible_host'] +
-                      'is already take by: ' + host_name)
+    def check_if_ip_is_taken(self, ip_address):
+        ip_address_taken = False
+        for host_data in list(self._hosts['all']['children'][self._group]['hosts'].values()):
+            if ip_address == host_data['ansible_host']:
+                ip_address_taken = True
+        return ip_address_taken
 
-        self._hosts['all']['children']['lxc']['hosts'][container_name] = {
-            'ansible_host': container_ip,
+    def get_hostname_form_ip(self, ip_address):
+        if self.check_if_ip_is_taken(ip_address):
+            for hostname, host_data in self._hosts['all']['children'][self._group]['hosts'].items():
+                if ip_address == host_data['ansible_host']:
+                    return hostname
+        else:
+            error('The IP-Address: ' + ip_address + ' not found')
+
+    def update_ip_address(self, hostname, ip_address, no_backup, backups_to_keep):
+        self._hosts['all']['children'][self._group]['hosts'][hostname]['ansible_host'] = ip_address
+        self._write_ansible_hosts_file(no_backup, backups_to_keep)
+
+    def set_host(self, hostname, ip_address, ansible_python_interpreter, no_backup, backups_to_keep):
+        if self.check_if_hostname_is_taken(hostname):
+            error('The Hostname: ' + hostname + ' allready exists')
+
+        if self.check_if_ip_is_taken(ip_address):
+            error('IP:' + host_data['ansible_host'] +
+                    'is already take by: ' + self.get_hostname_form_ip(ip_address))
+
+        self._hosts['all']['children'][self._group]['hosts'][hostname] = {
+            'ansible_host': ip_address,
             'ansible_python_interpreter': ansible_python_interpreter
         }
         self._write_ansible_hosts_file(no_backup, backups_to_keep)
 
-    def delete_host(self, container_name, no_backup, backups_to_keep):
+    def delete_host(self, hostname, no_backup, backups_to_keep):
         self._hosts['all']['children'][self._group]['hosts'].pop(
-            container_name)
+            hostname)
         self._write_ansible_hosts_file(no_backup, backups_to_keep)
 
     def print_ansible_hosts_file(self, json):
         print(yaml.dump(self._hosts, default_flow_style=json))
 
     def print_hosts(self):
-        for host_name, host_data in self._hosts['all']['children'][self._group]['hosts'].items():
-            print(host_name + ': ' + host_data['ansible_host'])
+        for hostname, host_data in self._hosts['all']['children'][self._group]['hosts'].items():
+            print(hostname + ': ' + host_data['ansible_host'])
 
 
 # Parser
 parser = argparse.ArgumentParser(
-    prog='inventory_updater', description='This script will add or delete entries in your ansible inventory')
+    prog='ansible_inventory_editor', description='This script will add or delete entries in your ansible inventory')
 parser.add_argument('--hosts_file', metavar='PATH',
                     default='/etc/ansible/hosts',
                     help='Path to your ansible hosts file')
@@ -95,7 +116,7 @@ parser.add_argument('--group', metavar='GROUP',
                     help='Ansible Inventory group')
 
 subparsers = parser.add_subparsers(title='subcommands', dest='command',
-                                   help='For additional help type: inventory_updater COMMAND --help')
+                                   help='For additional help type: ansible_inventory_editor COMMAND --help')
 
 parser_print_hosts = subparsers.add_parser(
     'print_hosts', help='Print all host and IP\'s of the group')
@@ -108,9 +129,9 @@ parser_print_ansible_hosts_file.add_argument(
 parser_set_host = subparsers.add_parser(
     'set_host', help='Add new host to the ansible hosts file')
 parser_set_host.add_argument(
-    'container_name', metavar='NAME', type=str, help='Name of the container')
+    'hostname', metavar='NAME', type=str, help='Name of the host')
 parser_set_host.add_argument(
-    'container_ip', metavar='IP', type=str, help='IP of the container')
+    'ip_address', metavar='IP', type=str, help='IP of the host')
 parser_set_host.add_argument('--path', metavar='PATH', default='/usr/bin/python3',
                              type=str, help='Ansible python interpreter path on host')
 parser_set_host.add_argument('--keep', metavar='N', default=10,
@@ -121,10 +142,21 @@ parser_set_host.add_argument(
 parser_delete_host = subparsers.add_parser(
     'delete_host', help='Delete a host from the ansible hosts file')
 parser_delete_host.add_argument(
-    'container_name', metavar='NAME', type=str, help='Name of the container')
+    'hostname', metavar='NAME', type=str, help='Name of the host')
 parser_delete_host.add_argument('--keep', metavar='N', default=10,
                                 type=int, help='Backups to keep of the ansible hosts file')
 parser_delete_host.add_argument(
+    '--no_backup', action='store_true', help='DON\'T (!!!) Backup ansible hosts file')
+
+parser_update_ip_address = subparsers.add_parser(
+    'update_ip_address', help='Update IP address of host in ansible hosts file')
+parser_update_ip_address.add_argument(
+    'hostname', metavar='NAME', type=str, help='Name of the host')
+parser_update_ip_address.add_argument(
+    'ip_address', metavar='IP', type=str, help='New IP of the host')
+parser_update_ip_address.add_argument('--keep', metavar='N', default=10,
+                                type=int, help='Backups to keep of the ansible hosts file')
+parser_update_ip_address.add_argument(
     '--no_backup', action='store_true', help='DON\'T (!!!) Backup ansible hosts file')
 
 if len(sys.argv) == 1:
@@ -132,29 +164,52 @@ if len(sys.argv) == 1:
 
 args = parser.parse_args()
 
-invetory_adhoc_updater = InventoryAdhocUpdater(
+ansible_invetory_editor = AnsibleInventoryEditor(
     group=args.group,
     ansible_hosts_file=args.hosts_file
 )
 
 if args.command == 'print_hosts':
-    invetory_adhoc_updater.print_hosts()
+    ansible_invetory_editor.print_hosts()
 
 if args.command == 'print_hosts_file':
-    invetory_adhoc_updater.print_ansible_hosts_file(json=args.json)
+    ansible_invetory_editor.print_ansible_hosts_file(json=args.json)
 
 if args.command == 'set_host':
-    invetory_adhoc_updater.set_host(
-        container_name=args.container_name,
-        container_ip=args.container_ip,
+    ansible_invetory_editor.set_host(
+        hostname=args.hostname,
+        ip_address=args.ip_address,
         ansible_python_interpreter=args.path,
         backups_to_keep=args.keep,
         no_backup=args.no_backup
     )
 
 if args.command == 'delete_host':
-    invetory_adhoc_updater.delete_host(
-        container_name=args.container_name,
+    ansible_invetory_editor.delete_host(
+        hostname=args.hostname,
         backups_to_keep=args.keep,
         no_backup=args.no_backup
+    )
+
+if args.command == 'update_ip_address':
+    ansible_invetory_editor.update_ip_address(
+        hostname=args.hostname,
+        ip_address=args.ip_address,
+        backups_to_keep=args.keep,
+        no_backup=args.no_backup
+    )
+    
+if args.command == 'get_hostname_form_ip':
+    ansible_invetory_editor.get_hostname_form_ip(
+        ip_address=args.ip_address
+    )
+
+if args.command == 'check_if_ip_is_taken':
+    ansible_invetory_editor.check_if_ip_is_taken(
+        ip_address=args.ip_address
+    )
+
+if args.command == 'check_if_hostname_is_taken':
+    ansible_invetory_editor.check_if_hostname_is_taken(
+        hostname=args.hostname
     )

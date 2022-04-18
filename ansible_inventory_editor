@@ -8,7 +8,7 @@ then
     exit 1
 fi
 
-if [ ! -d "$SCRIPT_DIR/inventory_updater_venv/" ]
+if [ ! -d "$SCRIPT_DIR/ansible_inventory_editor_venv/" ]
 then
     echo "First run:"
     echo "    Creating Virtual Enviroment..."
@@ -17,18 +17,18 @@ then
         echo "Python 3 Virtualenv not found!"
         exit 1
     fi
-    python3 -m venv $SCRIPT_DIR/inventory_updater_venv
-    source $SCRIPT_DIR/inventory_updater_venv/bin/activate
+    python3 -m venv $SCRIPT_DIR/ansible_inventory_editor_venv
+    source $SCRIPT_DIR/ansible_inventory_editor_venv/bin/activate
     echo "    Installing Requirements..."
     pip install -r requirements.txt >/dev/null 2>&1
     echo "    ...done!"
 fi 
 
-if [[ $(basename $VIRTUAL_ENV >/dev/null 2>&1) != 'inventory_updater_venv' ]]
+if [[ $(basename $VIRTUAL_ENV >/dev/null 2>&1) != 'ansible_inventory_editor_venv' ]]
 then
-    source $SCRIPT_DIR/inventory_updater_venv/bin/activate
+    source $SCRIPT_DIR/ansible_inventory_editor_venv/bin/activate
 fi
 
-python $SCRIPT_DIR/inventory_updater.py "$@"
+python $SCRIPT_DIR/ansible_inventory_editor.py "$@"
 
 exit 0
