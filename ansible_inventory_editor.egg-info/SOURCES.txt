@@ -1,0 +1,16 @@
+LICENSE
+README.md
+setup.cfg
+setup.py
+ansible_inventory_editor/__init__.py
+ansible_inventory_editor/__main__.py
+ansible_inventory_editor/cli.py
+ansible_inventory_editor/editor.py
+ansible_inventory_editor.egg-info/PKG-INFO
+ansible_inventory_editor.egg-info/SOURCES.txt
+ansible_inventory_editor.egg-info/dependency_links.txt
+ansible_inventory_editor.egg-info/entry_points.txt
+ansible_inventory_editor.egg-info/requires.txt
+ansible_inventory_editor.egg-info/top_level.txt
+ansible_inventory_editor/tests/__init__.py
+ansible_inventory_editor/tests/integration_tests.py

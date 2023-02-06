@@ -1,0 +1,2 @@
+[console_scripts]
+ansible-inventory-editor = ansible_inventory_editor.cli:main
